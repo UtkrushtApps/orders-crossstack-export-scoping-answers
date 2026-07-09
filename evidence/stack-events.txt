@@ -1,0 +1,20 @@
+# Stack event excerpts captured during recent deployment attempts
+# Region: us-east-1  Account: 210987654321 (non-production example account id)
+
+=== Attempt: create orders-data-staging ===
+2024-06-11T09:14:02Z  orders-data-staging   CREATE_IN_PROGRESS   AWS::CloudFormation::Stack   User Initiated
+2024-06-11T09:14:05Z  orders-data-staging   CREATE_FAILED        AWS::CloudFormation::Stack
+    Reason: Export with name OrdersTableName is already exported by stack orders-data-prod
+2024-06-11T09:14:07Z  orders-data-staging   ROLLBACK_IN_PROGRESS AWS::CloudFormation::Stack
+2024-06-11T09:14:20Z  orders-data-staging   ROLLBACK_COMPLETE    AWS::CloudFormation::Stack
+
+=== Attempt: update orders-data-prod (proposed export cleanup) ===
+2024-06-11T10:02:44Z  orders-data-prod      UPDATE_IN_PROGRESS   AWS::CloudFormation::Stack   User Initiated
+2024-06-11T10:02:49Z  orders-data-prod      UPDATE_FAILED        AWS::CloudFormation::Stack
+    Reason: Export OrdersTableName cannot be updated as it is in use by checkout-api-prod
+2024-06-11T10:02:52Z  orders-data-prod      UPDATE_ROLLBACK_COMPLETE AWS::CloudFormation::Stack
+
+=== Context ===
+orders-data-prod  : OrdersTable present, contains live order data (Retain policies in place)
+checkout-api-prod : CreateOrderFunction importing OrdersTableName and OrdersTableArn
+

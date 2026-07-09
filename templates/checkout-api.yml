@@ -1,0 +1,96 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  ShopFluent checkout API stack. Runs CreateOrderFunction for POST /api/orders
+  and reads the per-environment OrdersTable name/ARN published by the data stack.
+
+Metadata:
+  Owner: platform-checkout
+  Repo: infra/cloudformation
+  Component: checkout-api
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - staging
+      - prod
+    Description: Supported deployment environment name for this stack.
+
+  LambdaMemorySize:
+    Type: Number
+    Default: 256
+    MinValue: 128
+    MaxValue: 10240
+    Description: Memory (MB) allocated to CreateOrderFunction.
+
+Resources:
+  CreateOrderFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub 'shopfluent-create-order-${Environment}'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: orders-table-write
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                  - dynamodb:GetItem
+                Resource:
+                  Fn::ImportValue:
+                    Fn::Sub: 'shopfluent-orders-${Environment}-OrdersTableArn'
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Component
+          Value: checkout-api
+
+  CreateOrderFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub 'shopfluent-create-order-${Environment}'
+      Runtime: python3.12
+      Handler: index.handler
+      MemorySize: !Ref LambdaMemorySize
+      Timeout: 15
+      Role: !GetAtt CreateOrderFunctionRole.Arn
+      Environment:
+        Variables:
+          ORDERS_TABLE:
+            Fn::ImportValue:
+              Fn::Sub: 'shopfluent-orders-${Environment}-OrdersTableName'
+          STAGE: !Ref Environment
+      Code:
+        ZipFile: |
+          import os
+
+          def handler(event, context):
+              table = os.environ.get('ORDERS_TABLE')
+              return {
+                  'statusCode': 200,
+                  'body': 'order accepted for table %s' % table
+              }
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Component
+          Value: checkout-api
+
+Outputs:
+  CreateOrderFunctionName:
+    Description: Per-environment name of the CreateOrderFunction Lambda.
+    Value: !Ref CreateOrderFunction
+    Export:
+      Name: !Sub 'shopfluent-checkout-${Environment}-CreateOrderFunctionName'

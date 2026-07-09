@@ -1,0 +1,7 @@
+[
+  { "ParameterKey": "Environment", "ParameterValue": "staging" },
+  { "ParameterKey": "TableReadCapacity", "ParameterValue": "5" },
+  { "ParameterKey": "TableWriteCapacity", "ParameterValue": "5" },
+  { "ParameterKey": "PublishLegacyExports", "ParameterValue": "false" }
+]
+

@@ -1,0 +1,7 @@
+[
+  { "ParameterKey": "Environment", "ParameterValue": "prod" },
+  { "ParameterKey": "TableReadCapacity", "ParameterValue": "25" },
+  { "ParameterKey": "TableWriteCapacity", "ParameterValue": "25" },
+  { "ParameterKey": "PublishLegacyExports", "ParameterValue": "false" }
+]
+

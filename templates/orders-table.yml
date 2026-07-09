@@ -1,0 +1,127 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  ShopFluent data stack. Defines the OrdersTable DynamoDB table and publishes
+  per-environment metadata for consumption by downstream application stacks
+  (e.g. checkout API).
+
+Metadata:
+  Owner: platform-data
+  Repo: infra/cloudformation
+  Component: orders-data
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - staging
+      - prod
+    Description: Supported deployment environment name for this stack.
+
+  TableReadCapacity:
+    Type: Number
+    Default: 5
+    MinValue: 1
+    Description: Provisioned read capacity units for the OrdersTable.
+
+  TableWriteCapacity:
+    Type: Number
+    Default: 5
+    MinValue: 1
+    Description: Provisioned write capacity units for the OrdersTable.
+
+  PublishLegacyExports:
+    Type: String
+    Default: 'false'
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Description: >
+      Temporary production migration switch. Set to true only while moving
+      checkout-api-prod from the historical global OrdersTableName/OrdersTableArn
+      exports to the per-environment exports. Keep false for new and non-prod
+      deployments to avoid global export-name collisions.
+
+Rules:
+  LegacyExportsOnlyForProd:
+    RuleCondition: !Equals [!Ref PublishLegacyExports, 'true']
+    Assertions:
+      - Assert: !Equals [!Ref Environment, prod]
+        AssertDescription: PublishLegacyExports may only be enabled for the prod migration window.
+
+Mappings:
+  EnvConfig:
+    dev:
+      BillingMode: PROVISIONED
+    staging:
+      BillingMode: PROVISIONED
+    prod:
+      BillingMode: PROVISIONED
+
+Conditions:
+  IsProd: !Equals [!Ref Environment, prod]
+  PublishLegacyExportsEnabled: !Equals [!Ref PublishLegacyExports, 'true']
+  PublishLegacyProdExports: !And
+    - !Condition IsProd
+    - !Condition PublishLegacyExportsEnabled
+
+Resources:
+  OrdersTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub 'shopfluent-orders-${Environment}'
+      BillingMode: !FindInMap [EnvConfig, !Ref Environment, BillingMode]
+      ProvisionedThroughput:
+        ReadCapacityUnits: !Ref TableReadCapacity
+        WriteCapacityUnits: !Ref TableWriteCapacity
+      AttributeDefinitions:
+        - AttributeName: orderId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: orderId
+          KeyType: HASH
+      SSESpecification:
+        SSEEnabled: true
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Component
+          Value: orders-data
+        - Key: ManagedBy
+          Value: cloudformation
+
+Outputs:
+  ScopedOrdersTableName:
+    Description: Per-environment name of the OrdersTable for downstream stacks.
+    Value: !Ref OrdersTable
+    Export:
+      Name: !Sub 'shopfluent-orders-${Environment}-OrdersTableName'
+
+  ScopedOrdersTableArn:
+    Description: Per-environment ARN of the OrdersTable for downstream IAM policies.
+    Value: !GetAtt OrdersTable.Arn
+    Export:
+      Name: !Sub 'shopfluent-orders-${Environment}-OrdersTableArn'
+
+  OrdersTableName:
+    Condition: PublishLegacyProdExports
+    Description: >
+      Legacy global OrdersTable name export retained temporarily for the
+      checkout-api-prod migration. Do not enable for new environments.
+    Value: !Ref OrdersTable
+    Export:
+      Name: OrdersTableName
+
+  OrdersTableArn:
+    Condition: PublishLegacyProdExports
+    Description: >
+      Legacy global OrdersTable ARN export retained temporarily for the
+      checkout-api-prod migration. Do not enable for new environments.
+    Value: !GetAtt OrdersTable.Arn
+    Export:
+      Name: OrdersTableArn

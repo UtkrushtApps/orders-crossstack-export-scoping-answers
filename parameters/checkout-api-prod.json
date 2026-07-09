@@ -1,0 +1,5 @@
+[
+  { "ParameterKey": "Environment", "ParameterValue": "prod" },
+  { "ParameterKey": "LambdaMemorySize", "ParameterValue": "512" }
+]
+

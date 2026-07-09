@@ -1,0 +1,20 @@
+services:
+  localstack:
+    image: localstack/localstack:3.6
+    container_name: shopfluent-localstack
+    ports:
+      - "127.0.0.1:4566:4566"
+    environment:
+      SERVICES: cloudformation,dynamodb,lambda,iam,logs,sts,s3
+      DEBUG: "0"
+      AWS_DEFAULT_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      DISABLE_EVENTS: "1"
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:4566/_localstack/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+

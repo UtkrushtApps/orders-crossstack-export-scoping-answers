@@ -1,0 +1,5 @@
+cfn-lint==0.87.1
+PyYAML==6.0.2
+awscli==1.33.13
+awscli-local==0.22.0
+

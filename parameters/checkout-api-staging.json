@@ -1,0 +1,5 @@
+[
+  { "ParameterKey": "Environment", "ParameterValue": "staging" },
+  { "ParameterKey": "LambdaMemorySize", "ParameterValue": "256" }
+]
+

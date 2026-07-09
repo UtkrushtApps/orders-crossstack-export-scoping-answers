@@ -1,0 +1,32 @@
+{
+  "StackName": "orders-data-prod",
+  "ChangeSetName": "cs-orders-data-prod-review",
+  "Status": "CREATE_COMPLETE",
+  "ExecutionStatus": "AVAILABLE",
+  "Description": "Illustrative change set from a naive edit that renamed the physical table. Review before executing anything against prod.",
+  "Changes": [
+    {
+      "Type": "Resource",
+      "ResourceChange": {
+        "Action": "Modify",
+        "LogicalResourceId": "OrdersTable",
+        "PhysicalResourceId": "shopfluent-orders-prod",
+        "ResourceType": "AWS::DynamoDB::Table",
+        "Replacement": "True",
+        "Scope": ["Properties"],
+        "Details": [
+          {
+            "Target": {
+              "Attribute": "Properties",
+              "Name": "TableName",
+              "RequiresRecreation": "Always"
+            },
+            "Evaluation": "Static",
+            "ChangeSource": "DirectModification"
+          }
+        ]
+      }
+    }
+  ]
+}
+
